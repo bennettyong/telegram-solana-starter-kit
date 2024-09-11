@@ -21,7 +21,7 @@ export function LandingPage() {
       <Card className="w-full max-w-2xl">
         <CardHeader className="text-center">
           <CardTitle className="text-3xl font-bold text-blue-600">
-            Telegram Phantom Auth
+            Telegram Metamask Auth
           </CardTitle>
           <CardDescription>
             Seamless Authentication for Telegram Mini Apps
@@ -41,7 +41,7 @@ export function LandingPage() {
           <div className="text-center space-y-2">
             <h2 className="text-xl font-semibold">Why Choose Our Mini App?</h2>
             <ul className="text-sm text-gray-600 space-y-1">
-              <li>✅ Secure 1 Time Phantom Wallet Integration</li>
+              <li>✅ Secure 1 Time Metamask Wallet Integration</li>
               <li>✅ Seamless User Experience</li>
               <li>✅ Fast and Responsive</li>
               <li>✅ Direct Telegram User Authentication</li>

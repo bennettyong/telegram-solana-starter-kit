@@ -26,12 +26,12 @@ export function SuccessfulAuth() {
         </CardHeader>
         <CardContent className="text-center">
           <p className="text-gray-600 mb-4">
-            Your Phantom wallet has been successfully linked to your Telegram
+            Your Metamask wallet has been successfully linked to your Telegram
             account.
           </p>
           <div className="bg-green-100 p-4 rounded-lg mb-4">
             <p className="text-sm text-green-800 font-medium">
-              You can now use Phantom wallet features within this Telegram Mini
+              You can now use Metamask wallet features within this Telegram Mini
               App!
             </p>
           </div>

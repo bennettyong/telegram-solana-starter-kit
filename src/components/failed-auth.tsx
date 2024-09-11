@@ -9,7 +9,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { redirect } from "next/navigation";
 
 export function FailedAuth() {
   const handleRetry = () => {
@@ -27,12 +26,12 @@ export function FailedAuth() {
         </CardHeader>
         <CardContent className="text-center">
           <p className="text-gray-600 mb-4">
-            We couldn&apos;t link your Phantom wallet to your Telegram account.
+            We couldn&apos;t link your Metamask wallet to your Telegram account.
             Please try again.
           </p>
           <div className="bg-red-100 p-4 rounded-lg mb-4">
             <p className="text-sm text-red-800 font-medium">
-              Make sure you have a Phantom wallet set up and you&apos;re
+              Make sure you have a Metamask wallet set up and you&apos;re
               approving the connection request.
             </p>
           </div>

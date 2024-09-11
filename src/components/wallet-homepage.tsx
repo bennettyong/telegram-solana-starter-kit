@@ -4,74 +4,98 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { ArrowRightIcon, LogOutIcon, SendIcon } from "lucide-react";
+import { ArrowRightIcon, DrumIcon, Loader, LogOutIcon, SendIcon } from "lucide-react";
 import { Transaction, WalletData } from "@/types";
 import { useUser } from "@/context/user-context";
-import { signAndSendTransaction } from "@/utils/phantom";
+import { useSDK } from "@metamask/sdk-react";
+// import { signAndSendTransaction } from "@/utils/phantom";
 
 export function WalletHomepage(): JSX.Element {
-  const [walletAddress, setWalletAddress] = useState<string>();
   const [balance, setBalance] = useState<number>(0);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
-  const { user, loading: userLoading, logout, setAuthStatus } = useUser();
+  const { loading: userLoading, logout, setAuthStatus } = useUser();
+  const {sdk, account, provider, chainId} = useSDK()
 
   useEffect(() => {
-    if (!userLoading && user) {
-      setWalletAddress(user.public_key);
-    }
-  }, [userLoading, user]);
-
-  const fetchWalletData = async (): Promise<void> => {
-    if (!walletAddress) return;
-    setLoading(true);
-    try {
-      const response = await fetch(`/api/wallet?address=${walletAddress}`);
-      if (!response.ok) {
-        throw new Error("Network response was not ok");
+    switchChain()
+  }, [account, chainId, provider]);
+  
+  const switchChain  = () => {
+    const targetChainId = '0x28c58'; // The desired chain ID
+    
+    if (account && chainId && provider) {
+      // Check if the current chainId doesn't match the target chainId
+      if (chainId !== targetChainId) {
+        provider.request({
+          method: 'wallet_switchEthereumChain',
+          params: [{ chainId: targetChainId }],
+        })
+        .then(() => {
+          console.log('Switched to chain ID:', targetChainId);
+        })
+        .catch((error) => {
+            // Chain not found in MetaMask, request to add it
+            provider.request({
+              method: 'wallet_addEthereumChain',
+              params: [{
+                chainId: targetChainId,
+                chainName: 'Taiko', // Change to your chain name
+                nativeCurrency: {
+                  symbol: 'ETH', // Symbol of the native currency
+                  decimals: 18,
+                },
+                rpcUrls: ['https://rpc.taiko.xyz'], // Add your chain's RPC URL
+                blockExplorerUrls: ['https://taikoscan.io'], // Add your chain's block explorer
+              }],
+            })
+            .then(() => {
+              console.log('Chain added and switched to chain ID:', targetChainId);
+            })
+            .catch((error) => {
+              console.error('Failed to add or switch to chain:', error);
+            });
+          
+        });
       }
-      const data: WalletData = await response.json();
-      setBalance(data.balance);
-      setTransactions(data.transactions);
+    }
+  }
+
+  const handleDisconnect = async () => {
+    try {
+      await sdk?.terminate();
+      setBalance(0);
+      setTransactions([]);
+      setAuthStatus("");
+      logout();
+      window.location.href = "/"; 
     } catch (error) {
-      console.error("Error fetching wallet data:", error);
-    } finally {
-      setLoading(false);
+      console.log(error)
     }
   };
 
-  useEffect(() => {
-    fetchWalletData();
-  }, [walletAddress]);
-
-  const handleDisconnect = (): void => {
-    setWalletAddress("");
-    setBalance(0);
-    setTransactions([]);
-    setAuthStatus("");
-    logout();
-    window.location.href = "/";
-  };
-
-  const handleSendMoney = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleDrum = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    let recipient = (e.currentTarget[0] as HTMLInputElement).value;
-    let amount = parseFloat((e.currentTarget[1] as HTMLInputElement).value);
-
-    if (!user?.session || !user?.shared_secret || !user?.public_key) {
-      console.error("User session, shared secret or public key is missing");
-      return;
-    }
-
-    let url = await signAndSendTransaction(
-      user?.session,
-      user?.shared_secret,
-      user?.public_key,
-      recipient,
-      amount
-    );
-
-    window.location.href = url;
+    if( !account || !provider )return;
+    const transactionParameters = {
+      to: account, // Required except during contract publications
+      from: account, // Must match the user's active address.
+      value: '1', // Hexadecimal value of the amount to send (e.g., 1 ETH)
+      chainId: '0x28c58',
+    };
+    setLoading(true)
+    provider.request({
+      method: 'eth_sendTransaction',
+      params: [transactionParameters],
+    })
+    .then((txHash) => {
+      console.log('Transaction hash:', txHash);
+    })
+    .catch((error) => {
+      console.error('Error sending transaction:', error);
+    }).finally(() =>
+      setLoading(false)
+    )
   };
 
   return (
@@ -79,7 +103,7 @@ export function WalletHomepage(): JSX.Element {
       <Card className="w-full max-w-md mx-auto">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <CardTitle className="text-2xl font-bold">
-            {walletAddress?.slice(0, 6)}...{walletAddress?.slice(-4)}
+            {account?.slice(0, 6)}...{account?.slice(-4)}
           </CardTitle>
           <Button variant="ghost" size="icon" onClick={handleDisconnect}>
             <LogOutIcon className="h-4 w-4" />
@@ -87,19 +111,17 @@ export function WalletHomepage(): JSX.Element {
         </CardHeader>
         <CardContent>
           <div className="text-center mb-6">
-            <p className="text-sm text-gray-500">Current Balance</p>
-            <p className="text-4xl font-bold">${balance.toFixed(2)}</p>
+            {/* <p className="text-sm text-gray-500">Current Beats</p>
+            <p className="text-4xl font-bold">${balance.toFixed(2)}</p> */}
           </div>
-          <form onSubmit={handleSendMoney} className="space-y-4 mb-6">
-            <Input type="text" placeholder="Recipient address" />
-            <Input type="number" placeholder="Amount" step="0.001" min="0" />
+          <form onSubmit={handleDrum} className="space-y-4 mb-6">
             <Button type="submit" className="w-full">
-              <SendIcon className="mr-2 h-4 w-4" /> Send Money
+              {loading || userLoading ? <Loader className="mr-2 h-4 w-4" /> : <DrumIcon className="mr-2 h-4 w-4" />}
             </Button>
           </form>
           <div>
-            <h3 className="font-semibold mb-2">Transaction History</h3>
-            {loading ? (
+            <h3 className="font-semibold mb-2">Drumming History</h3>
+            {userLoading ? (
               <p>Loading...</p>
             ) : (
               <ScrollArea className="h-[200px]">

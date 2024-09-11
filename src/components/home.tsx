@@ -1,13 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import {
   useInitData,
   useLaunchParams,
   useCloudStorage,
 } from "@telegram-apps/sdk-react";
-import { connect } from "../utils/phantom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -15,6 +14,7 @@ import { SuccessfulAuth } from "./successful-auth";
 import { FailedAuth } from "./failed-auth";
 import { AuthLoader } from "./auth-loader";
 import { useUser } from "@/context/user-context";
+import { useSDK } from "@metamask/sdk-react";
 
 export function Homepage() {
   const initData = useInitData();
@@ -22,11 +22,20 @@ export function Homepage() {
   const storage = useCloudStorage();
   const router = useRouter();
   const { user, setUser, loading, authStatus, setAuthStatus } = useUser();
-
-  const handleAuthenticate = () => {
+  const { sdk } = useSDK
+  ();
+  const handleAuthenticate = async () => {
     if (!initData?.user?.id) return;
-    let url = connect(initData?.user?.id);
-    window.location.href = url;
+    try {
+      const accounts = await sdk?.connect();
+      setAuthStatus("success");
+      setUser({
+        public_key: accounts[0],
+      })
+    } catch (error) {
+      console.log(error)
+    }
+    // window.location.href = url;
   };
 
   useEffect(() => {
@@ -69,7 +78,7 @@ export function Homepage() {
       <Card className="w-full max-w-md">
         <CardHeader>
           <CardTitle className="text-3xl font-bold text-center">
-            Telegram Solana Starter Kit
+            Telegram Taiko Starter Kit
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -102,7 +111,7 @@ export function Homepage() {
           )}
 
           <Button onClick={handleAuthenticate} className="w-full">
-            Authenticate with Phantom
+            Authenticate with Metamask
           </Button>
         </CardContent>
       </Card>

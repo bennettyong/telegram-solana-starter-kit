@@ -1,12 +1,10 @@
 "use client";
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { useCloudStorage } from "@telegram-apps/sdk-react";
+import { useSDK } from "@metamask/sdk-react";
 
 type User = {
   public_key: string;
-  session: string;
-  shared_secret: string;
-  phantom_encryption_public_key: string;
 };
 
 type UserContextType = {
